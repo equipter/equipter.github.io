@@ -106,7 +106,7 @@
   a.link:hover { padding-right: 12px; padding-left: 12px; color: var(--accent); }
   .link::after { content: "↗"; color: var(--accent); font-size: 1.1rem; }
   .link small { display: block; margin-top: 3px; color: var(--muted); font-size: .78rem; font-weight: 400; }
-  .link-static::after { content: "equip"; color: var(--muted); font-size: .85rem; }
+  .link-static::after { content: "username: equip"; color: var(--muted); font-size: .85rem; }
   .shop-links { display: grid; grid-template-columns: 1fr 1fr; column-gap: 36px; }
   details.link { display: block; min-height: 0; }
   details.link::after { display: none; }
@@ -195,17 +195,9 @@
       <a class="link" href="https://discord.gg/thepirates" target="_blank" rel="noopener noreferrer"><span>ThePiratesPlunder Server</span></a>
       <a class="link" href="https://www.buymeacoffee.com/equip" target="_blank" rel="noopener noreferrer"><span>Buy me a coffee</span></a>
       <a class="link" href="https://github.com/equipter" target="_blank" rel="noopener noreferrer"><span>GitHub</span></a>
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="keys-heading">
-    <div class="section-heading">
-      <h2 id="keys-heading">Keys</h2>
-    </div>
-    <div class="links">
       <details class="link">
-      <summary>PGP Key</summary>
-      <div class="panel">
+        <summary>PGP Key</summary>
+        <div class="panel">
 <pre id="pgp">-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: BCPG v1.86
 
@@ -225,9 +217,19 @@ HHQB1vhPSV6RUS1ujci+AwvwSSkeeIsYgGXckNMSAQUBAPKG48YyZ7cRprrI2LqP
 AJ1xo36/joQyZaiybINr8s4f
 =ZJP/
 -----END PGP PUBLIC KEY BLOCK-----</pre>
-        <button type="button" id="copy">Copy key</button>
-      </div>
-    </details>
+          <button type="button" id="copy">Copy key</button>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="writeups-heading">
+    <div class="section-heading">
+      <h2 id="writeups-heading">Writeups</h2>
+    </div>
+    <div class="links">
+      <a class="link" href="https://gist.github.com/equipter/de2d9e421be9af1615e9b9cad4834ddc" target="_blank" rel="noopener noreferrer"><span>iOS NDEF Record Compatibility</span></a>
+      <a class="link" href="https://gist.github.com/equipter/3022aea4e371e585ff6e46de637e7769" target="_blank" rel="noopener noreferrer"><span>Mifare Classic - SAK Swapping Explained</span></a>
     </div>
   </section>
 
