@@ -4,87 +4,169 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Equip</title>
-<meta name="description" content="23 Year old British physical penetration tester, access control researcher and ripperdoc">
+<meta name="description" content="British physical penetration tester, access control researcher and ripperdoc">
 <meta property="og:title" content="Equip">
-<meta property="og:description" content="23 Year old British physical penetration tester, access control researcher and ripperdoc">
+<meta property="og:description" content="British physical penetration tester, access control researcher and ripperdoc">
 <meta property="og:type" content="profile">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#11130f">
 <style>
   :root {
-    --bg: #000;
-    --fg: #fff;
-    --muted: rgba(255,255,255,.62);
-    --btn: #141414;
-    --btn-hover: #222;
-    --line: rgba(255,255,255,.14);
-    --gap: 14px;
     color-scheme: dark;
+    --bg: #11130f;
+    --surface: #191c17;
+    --fg: #f0f0e9;
+    --muted: #9a9d91;
+    --line: #34372f;
+    --accent: #d7f36a;
+    --serif: Georgia, "Times New Roman", serif;
   }
   * { box-sizing: border-box; }
-  html { background: var(--bg); }
+  html { background: var(--bg); scroll-behavior: smooth; }
   body {
     margin: 0;
     min-height: 100vh;
     color: var(--fg);
-    background: var(--bg);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-    padding: max(48px, env(safe-area-inset-top)) 16px max(40px, env(safe-area-inset-bottom));
+    background:
+      radial-gradient(ellipse at 82% 9%, rgba(215,243,106,.075), transparent 28rem),
+      linear-gradient(90deg, transparent 0, transparent calc(50% - 1px), rgba(255,255,255,.018) 50%, transparent calc(50% + 1px)),
+      var(--bg);
+    font-family: "Segoe UI", Arial, sans-serif;
+    line-height: 1.55;
+    padding: 0 6vw max(48px, env(safe-area-inset-bottom));
   }
-  main { max-width: 580px; margin: 0 auto; text-align: center; }
-  .avatar { display: block; margin: 0 auto; width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: #222; }
-  h1 { font-size: 1.5rem; line-height: 1.2; margin: 16px 0 4px; }
-  .bio { margin: 0 auto; max-width: 34ch; color: var(--fg); text-wrap: balance; }
-  .socials { display: flex; justify-content: center; gap: 4px; margin: 12px 0 28px; }
-  .socials a { padding: 8px; color: var(--fg); display: inline-flex; }
-  .socials a:hover { opacity: .75; }
-  .socials svg { width: 32px; height: 32px; fill: currentColor; }
-  h2 { font-size: 1rem; margin: 28px 0 var(--gap); }
-  h2:first-of-type { margin-top: 0; }
-  .links { display: flex; flex-direction: column; gap: var(--gap); }
+  main { max-width: 1180px; margin: 0 auto; }
+  a { color: inherit; }
+  a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .intro {
+    min-height: 520px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: center;
+    gap: clamp(40px, 8vw, 120px);
+    padding: 120px 0 88px;
+    border-bottom: 1px solid var(--line);
+  }
+  h1 {
+    margin: 0 0 20px -7px;
+    font-size: clamp(5rem, 12vw, 10.5rem);
+    font-weight: 650;
+    letter-spacing: -.105em;
+    line-height: .82;
+  }
+  .bio { max-width: 510px; margin: 0; color: #c1c3b9; font-size: clamp(1rem, 1.7vw, 1.2rem); }
+  .portrait-wrap { position: relative; width: 100%; max-width: 340px; justify-self: end; }
+  .portrait-wrap::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(215,243,106,.55);
+    pointer-events: none;
+  }
+  .avatar { position: relative; display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; filter: saturate(.72); background: var(--surface); }
+  .socials { display: flex; gap: 8px; margin-top: 32px; }
+  .socials a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    transition: color .2s, border-color .2s, transform .2s;
+  }
+  .socials a:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-2px); }
+  .socials svg { width: 18px; height: 18px; fill: currentColor; }
+  .section {
+    display: grid;
+    grid-template-columns: minmax(170px, .7fr) minmax(0, 2fr);
+    gap: 48px;
+    padding: 52px 0 56px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-heading { align-self: start; }
+  h2 { margin: 8px 0 0; font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 500; letter-spacing: -.055em; line-height: 1; }
+  .links { min-width: 0; }
   .link {
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    min-height: 64px; padding: 12px 32px;
-    background: var(--btn); color: var(--fg);
-    border: 1px solid var(--line); border-radius: 8px;
-    text-decoration: none; font: inherit; font-weight: 500;
-    width: 100%; cursor: pointer;
-    transition: background .15s;
+    position: relative;
+    display: flex;
+    min-height: 66px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 13px 4px;
+    color: var(--fg);
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    font-size: 1rem;
+    transition: padding .2s, color .2s;
   }
-  .link:hover { background: var(--btn-hover); }
-  .link small { font-weight: 400; font-size: .75rem; color: var(--muted); }
-  a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-  details.link { padding: 0; align-items: stretch; cursor: default; }
-  details.link:hover { background: var(--btn); }
+  .link:first-child { border-top: 1px solid var(--line); }
+  a.link:hover { padding-right: 12px; padding-left: 12px; color: var(--accent); }
+  .link::after { content: "↗"; color: var(--accent); font-size: 1.1rem; }
+  .link small { display: block; margin-top: 3px; color: var(--muted); font-size: .78rem; font-weight: 400; }
+  .link-static::after { content: "equip"; color: var(--muted); font-size: .85rem; }
+  .shop-links { display: grid; grid-template-columns: 1fr 1fr; column-gap: 36px; }
+  details.link { display: block; min-height: 0; }
+  details.link::after { display: none; }
   details summary {
-    list-style: none; cursor: pointer; min-height: 62px;
-    display: flex; align-items: center; justify-content: center; padding: 12px 32px;
+    display: flex;
+    min-height: 66px;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    list-style: none;
   }
   details summary::-webkit-details-marker { display: none; }
-  .panel { padding: 0 16px 16px; text-align: left; }
+  details summary::after { content: "+"; color: var(--accent); font-size: 1.35rem; }
+  details[open] summary::after { content: "−"; }
+  .panel { padding: 0 0 18px; }
   .panel pre {
-    margin: 0 0 12px; padding: 12px; overflow-x: auto;
-    background: #000; border: 1px solid var(--line); border-radius: 6px;
-    font: .72rem/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    color: var(--fg); user-select: all;
+    max-height: 240px;
+    margin: 0 0 12px;
+    padding: 14px;
+    overflow: auto;
+    color: #cfd1c5;
+    background: #0c0e0b;
+    border: 1px solid var(--line);
+    font: .7rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    user-select: all;
   }
   .panel button {
-    font: inherit; font-size: .85rem; color: var(--fg);
-    background: transparent; border: 1px solid var(--line); border-radius: 6px;
-    padding: 6px 14px; cursor: pointer;
+    padding: 8px 12px;
+    color: var(--accent);
+    background: transparent;
+    border: 1px solid var(--line);
+    font: 600 .72rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    cursor: pointer;
   }
-  .panel button:hover { background: var(--btn-hover); }
-  .panel p { margin: 0; }
-  footer { margin-top: 40px; font-size: .75rem; color: var(--muted); }
+  .panel button:hover { border-color: var(--accent); }
+  footer { padding-top: 22px; color: var(--muted); font-size: .75rem; }
+  @media (max-width: 700px) {
+    body { padding-right: 7vw; padding-left: 7vw; }
+    .intro { min-height: 0; grid-template-columns: 1fr 92px; gap: 20px; padding: 72px 0 58px; }
+    .intro-copy { display: contents; }
+    h1 { grid-column: 1; grid-row: 1; align-self: center; margin: 0 0 0 -4px; font-size: clamp(4rem, 18vw, 6rem); }
+    .bio { grid-column: 1 / -1; grid-row: 2; }
+    .portrait-wrap { grid-column: 2; grid-row: 1; width: 92px; }
+    .socials { grid-column: 1 / -1; grid-row: 3; margin-top: 8px; }
+    .section { grid-template-columns: 1fr; gap: 20px; padding: 36px 0 40px; }
+    h2 { margin-top: 0; }
+    .shop-links { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+  }
 </style>
 </head>
 <body>
 <main>
-  <img class="avatar" src="avatar.jpg" alt="Equip" width="96" height="96">
-  <h1>Equip</h1>
-  <p class="bio">23 Year old British physical penetration tester, access control researcher and ripperdoc</p>
-  <nav class="socials" aria-label="Social links">
+  <section class="intro" aria-labelledby="name">
+    <div class="intro-copy">
+      <h1 id="name">Equip</h1>
+      <p class="bio">British physical penetration tester, access control researcher and ripperdoc.</p>
+      <nav class="socials" aria-label="Social links">
     <a href="mailto:mrequipter@protonmail.com" aria-label="Email">
       <svg viewBox="0 0 24 24"><path d="M4.3 7.28c-.16.35-.23.72-.27 1.13C4 8.84 4 9.36 4 10.01v3.98c0 .65 0 1.17.03 1.6.04.43.11.82.3 1.17.28.57.74 1.03 1.3 1.31.36.18.74.26 1.18.3.42.03.95.03 1.6.03h7.17c.65 0 1.18 0 1.6-.03.44-.04.82-.12 1.18-.3.57-.28 1.02-.74 1.31-1.3.18-.36.26-.74.3-1.18.03-.43.03-.95.03-1.6v-3.98c0-.65 0-1.17-.03-1.6a3.3 3.3 0 0 0-.27-1.13l-5.8 4.74a2.5 2.5 0 0 1-3.8 0L4.3 7.28Z"/><path d="M18.96 6.33a3.4 3.4 0 0 0-.6-.4c-.36-.18-.74-.26-1.18-.3-.42-.03-.95-.03-1.6-.03H8.4c-.65 0-1.17 0-1.6.03-.43.04-.82.12-1.17.3-.22.11-.42.25-.6.4l5.82 4.76a2 2 0 0 0 2.28 0l5.83-4.76Z"/></svg>
     </a>
@@ -97,19 +179,31 @@
     <a href="https://signal.me/#eu/82opAbjcs2AX_drJQrVseH9gRSEh9NX09NBCPQoMvDq89IMU1XlD15sk4KLJIXso" aria-label="Signal" target="_blank" rel="noopener noreferrer">
       <svg viewBox="0 0 24 24"><path d="M12 3.06a8.94 8.94 0 0 0-7.56 13.69l-.87 3.66 3.67-.85A8.94 8.94 0 1 0 12 3.06Zm-5.1 17.5-1.48.35.24 1-.01-.01 1.08-.25c.83.44 1.7.78 2.62.99l.25-1.01a8 8 0 0 1-2.7-1.07Zm-4.82-2.22 1.01.23.34-1.48a8.6 8.6 0 0 1-1.1-2.7l-1 .25c.23.92.57 1.79 1.01 2.62l-.26 1.08ZM2.6 21.1l2.1-.5.5 1-2.13.5a.93.93 0 0 1-1.13-1.13l.5-2.13 1 .24-.5 2.13-.34-.11ZM10.5 2.13a12 12 0 0 1 3 0l.14-1.01a13 13 0 0 0-3.3 0l.16 1.01Zm10.93 4.18-.88.52c.51.86.9 1.79 1.13 2.75l1.01-.25a11 11 0 0 0-1.26-3.02ZM3.98 6.08a10 10 0 0 1 2.1-2.13l-.61-.82a11 11 0 0 0-2.33 2.32l.84.63Zm13.93-2.13c.81.6 1.52 1.31 2.11 2.11l.83-.6a11 11 0 0 0-2.32-2.33l-.62.82Zm2.11 13.94c-.59.82-1.3 1.52-2.11 2.12l.61.82a11 11 0 0 0 2.33-2.32l-.83-.62ZM13.5 21.85c-1 .16-2.01.16-3 0l-.16 1.03a13 13 0 0 0 3.3 0l-.14-1.03Zm9.18-7.21-1-.25a10 10 0 0 1-1.15 2.78l.89.52c.57-.95 1-1.98 1.26-3.05ZM21.97 12c0 .5-.04 1-.11 1.49l1.01.16a13 13 0 0 0 0-3.3l-1.01.16c.07.5.11 1 .11 1.49Zm-4.29 9.41-.53-.88a9 9 0 0 1-2.75 1.13l.25 1a11 11 0 0 0 3.04-1.25ZM2.03 12c0-.5.04-1 .11-1.5l-1.01-.16a13 13 0 0 0 0 3.3l1.01-.15A10 10 0 0 1 2.03 12Zm.55-5.69a11 11 0 0 0-1.26 3.04l1 .25c.24-.97.63-1.9 1.14-2.76l-.88-.53ZM14.64 1.32l-.25 1a9 9 0 0 1 2.77 1.14l.53-.88a11 11 0 0 0-3.05-1.26Zm-5.28 0 .25 1a9 9 0 0 0-2.77 1.14l-.53-.88a11 11 0 0 1 3.05-1.26Z"/></svg>
     </a>
-  </nav>
+      </nav>
+    </div>
+    <div class="portrait-wrap">
+      <img class="avatar" src="avatar.jpg" alt="Equip" width="460" height="460">
+    </div>
+  </section>
 
-  <h2>Social</h2>
-  <div class="links">
-    <div class="link" style="cursor:default">Discord: equip<small>my username on discord is literally just equip. cool right?</small></div>
-    <a class="link" href="https://discord.gg/thepirates" target="_blank" rel="noopener noreferrer">ThePiratesPlunder Server<small>Discord Server • Free to join</small></a>
-    <a class="link" href="https://www.buymeacoffee.com/equip" target="_blank" rel="noopener noreferrer">Buy Me a coffee</a>
-    <a class="link" href="https://github.com/equipter" target="_blank" rel="noopener noreferrer">GitHub</a>
-  </div>
+  <section class="section" aria-labelledby="social-heading">
+    <div class="section-heading">
+      <h2 id="social-heading">Elsewhere</h2>
+    </div>
+    <div class="links">
+      <div class="link link-static"><span>Discord</span></div>
+      <a class="link" href="https://discord.gg/thepirates" target="_blank" rel="noopener noreferrer"><span>ThePiratesPlunder Server</span></a>
+      <a class="link" href="https://www.buymeacoffee.com/equip" target="_blank" rel="noopener noreferrer"><span>Buy me a coffee</span></a>
+      <a class="link" href="https://github.com/equipter" target="_blank" rel="noopener noreferrer"><span>GitHub</span></a>
+    </div>
+  </section>
 
-  <h2>Keys</h2>
-  <div class="links">
-    <details class="link">
+  <section class="section" aria-labelledby="keys-heading">
+    <div class="section-heading">
+      <h2 id="keys-heading">Keys</h2>
+    </div>
+    <div class="links">
+      <details class="link">
       <summary>PGP Key</summary>
       <div class="panel">
 <pre id="pgp">-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -134,18 +228,23 @@ AJ1xo36/joQyZaiybINr8s4f
         <button type="button" id="copy">Copy key</button>
       </div>
     </details>
-  </div>
+    </div>
+  </section>
 
-  <h2>Shop the homies</h2>
-  <div class="links">
-    <a class="link" href="https://www.midwestgadgets.org" target="_blank" rel="noopener noreferrer">Midwest Gadgets</a>
-    <a class="link" href="https://rabbit-labs.com" target="_blank" rel="noopener noreferrer">Rabbit-Labs</a>
-    <a class="link" href="https://halehound.com" target="_blank" rel="noopener noreferrer">HaleHound™</a>
-    <a class="link" href="https://nyandevices.com" target="_blank" rel="noopener noreferrer">Nyan Devices</a>
-    <a class="link" href="https://rootlevelsyndicate.com/en-gbp" target="_blank" rel="noopener noreferrer">Root Level Syndicate</a>
-    <a class="link" href="https://labs.ksec.co.uk" target="_blank" rel="noopener noreferrer">KSEC</a>
-    <a class="link" href="https://dangerousthings.com" target="_blank" rel="noopener noreferrer">Dangerous things implants</a>
-  </div>
+  <section class="section" aria-labelledby="friends-heading">
+    <div class="section-heading">
+      <h2 id="friends-heading">Shop the homies</h2>
+    </div>
+    <div class="links shop-links">
+      <a class="link" href="https://www.midwestgadgets.org" target="_blank" rel="noopener noreferrer"><span>Midwest Gadgets</span></a>
+      <a class="link" href="https://rabbit-labs.com" target="_blank" rel="noopener noreferrer"><span>Rabbit-Labs</span></a>
+      <a class="link" href="https://halehound.com" target="_blank" rel="noopener noreferrer"><span>HaleHound™</span></a>
+      <a class="link" href="https://nyandevices.com" target="_blank" rel="noopener noreferrer"><span>Nyan Devices</span></a>
+      <a class="link" href="https://rootlevelsyndicate.com/en-gbp" target="_blank" rel="noopener noreferrer"><span>Root Level Syndicate</span></a>
+      <a class="link" href="https://labs.ksec.co.uk" target="_blank" rel="noopener noreferrer"><span>KSEC</span></a>
+      <a class="link" href="https://dangerousthings.com" target="_blank" rel="noopener noreferrer"><span>Dangerous Things implants</span></a>
+    </div>
+  </section>
 
   <footer>© Equip</footer>
 </main>
