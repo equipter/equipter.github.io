@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Firmware flasher</title>
+<style>
+:root {
+  --bg: #eef0eb;
+  --panel: #f8f9f6;
+  --ink: #17211d;
+  --muted: #5a665f;
+  --line: #c9cfc6;
+  --board: #1d6b4e;
+  --board-ink: #ffffff;
+  --amber: #b8741a;
+  --err: #b3261e;
+  --seg-a: #1d6b4e;
+  --seg-b: #b8741a;
+  --seg-c: #4a6fa5;
+  --seg-d: #8a5a9e;
+  --seg-x: #6b7280;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111915;
+    --panel: #18221d;
+    --ink: #e4eae4;
+    --muted: #96a39b;
+    --line: #2f3d36;
+    --board: #4fb88b;
+    --board-ink: #0c1511;
+    --amber: #e0a050;
+    --err: #ff8a80;
+    --seg-a: #3fa57b;
+    --seg-b: #d6933f;
+    --seg-c: #6f93c9;
+    --seg-d: #b283c6;
+    --seg-x: #8b93a1;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  color: var(--ink);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: max(24px, env(safe-area-inset-top)) 20px 64px;
+}
+main { max-width: 760px; margin: 0 auto; }
+h1 {
+  font: 600 clamp(2rem, 5vw, 2.75rem)/1.05 Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  letter-spacing: -0.02em;
+  margin: 40px 0 8px;
+}
+h2 { font-size: 1.05rem; margin: 0 0 12px; display: flex; gap: 10px; align-items: baseline; }
+h2 .n {
+  display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--ink); color: var(--bg); font-size: .8rem; font-weight: 600; flex: none;
+}
+.lede { color: var(--muted); margin: 0 0 32px; max-width: 60ch; }
+section { border-top: 1px solid var(--line); padding: 24px 0; }
+code, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .9em; }
+
+button, select, input[type=text] {
+  font: inherit; color: inherit;
+}
+button {
+  border: 1px solid var(--ink); background: transparent; border-radius: 6px;
+  padding: 9px 16px; cursor: pointer; font-weight: 500;
+}
+button:hover:not(:disabled) { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+button.primary { background: var(--board); border-color: var(--board); color: var(--board-ink); font-weight: 600; }
+button.primary:hover:not(:disabled) { background: var(--board); filter: brightness(1.1); }
+button.small { padding: 5px 10px; font-size: .85rem; }
+button.ghost { border-color: var(--line); color: var(--muted); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.status { color: var(--muted); }
+.status b { color: var(--ink); font-weight: 600; }
+.notice {
+  border-left: 4px solid var(--amber); padding: 10px 14px; background: var(--panel);
+  margin: 12px 0 0; border-radius: 0 6px 6px 0;
+}
+.notice.err { border-color: var(--err); }
+.hidden { display: none !important; }
+
+#drop {
+  border: 2px dashed var(--line); border-radius: 8px; padding: 22px; text-align: center;
+  color: var(--muted); background: var(--panel); transition: border-color .15s, background .15s;
+}
+#drop.over { border-color: var(--board); background: color-mix(in srgb, var(--board) 10%, var(--panel)); }
+#drop p { margin: 0 0 10px; }
+
+#files { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.file {
+  display: grid; grid-template-columns: 12px minmax(90px, 1fr) minmax(0, 2fr) 110px auto; gap: 12px;
+  align-items: center; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+}
+.file .sw { width: 12px; height: 12px; border-radius: 3px; }
+.file .role { font-weight: 600; }
+.file .fname { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file .fname.empty { font-style: italic; }
+.file input[type=text] {
+  width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .9rem;
+}
+.file input[type=text].bad { border-color: var(--err); }
+.file .acts { display: flex; gap: 6px; }
+@media (max-width: 640px) {
+  .file { grid-template-columns: 12px 1fr auto; }
+  .file .fname { grid-column: 2 / 4; }
+  .file .off { grid-column: 2 / 3; }
+  .file .acts { grid-column: 3 / 4; }
+}
+
+.mapwrap { margin: 24px 0 0; }
+.map {
+  position: relative; height: 40px; border: 1px solid var(--ink); border-radius: 4px; background:
+    repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--line) calc(25% - 1px) 25%);
+  overflow: hidden;
+}
+.seg { position: absolute; top: 4px; bottom: 4px; border-radius: 2px; min-width: 3px; }
+.seg.clash { outline: 2px solid var(--err); }
+.ticks { display: flex; justify-content: space-between; color: var(--muted); font-size: .8rem; margin-top: 4px; }
+.mapcap { color: var(--muted); font-size: .9rem; margin: 0 0 8px; }
+
+.opts { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; margin: 20px 0; }
+.opts label { display: flex; gap: 8px; align-items: center; }
+select { padding: 6px 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+
+progress {
+  width: 100%; height: 14px; border-radius: 7px; overflow: hidden; border: 1px solid var(--ink); margin-top: 16px;
+  appearance: none; background: var(--panel);
+}
+progress::-webkit-progress-bar { background: var(--panel); }
+progress::-webkit-progress-value { background: var(--board); transition: width .1s; }
+progress::-moz-progress-bar { background: var(--board); }
+#pmsg { color: var(--muted); font-size: .9rem; min-height: 1.5em; margin: 6px 0 0; }
+
+#log {
+  margin: 0; height: 220px; overflow: auto; padding: 12px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--panel); font: .82rem/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: pre-wrap;
+}
+footer { color: var(--muted); font-size: .88rem; border-top: 1px solid var(--line); padding-top: 20px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Firmware flasher</h1>
+  <p class="lede">Flash compiled <code>.bin</code> files to an ESP32 dev board (<code>esp32dev</code>) over USB. Files stay in your browser and are never uploaded.</p>
+
+  <div id="unsupported" class="notice err hidden">
+    This browser can't talk to serial devices. Use desktop Chrome, Edge, or Opera.
+  </div>
+
+  <section>
+    <h2><span class="n">1</span> Connect the board</h2>
+    <div class="row">
+      <button id="connect" class="primary">Connect</button>
+      <button id="disconnect" class="ghost hidden">Disconnect</button>
+      <span id="cstatus" class="status">Not connected.</span>
+    </div>
+    <div id="chipwarn" class="notice err hidden"></div>
+    <p class="status" style="margin:12px 0 0;font-size:.9rem">
+      If connecting fails, hold the <b>BOOT</b> button on the board while you press Connect, then release it once flashing starts.
+    </p>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span> Choose firmware files</h2>
+    <div id="drop">
+      <p>Drop your <code>.bin</code> files here. They're matched to a slot by file name.</p>
+      <button id="browse">Browse files</button>
+      <input id="multi" type="file" accept=".bin" multiple class="hidden">
+    </div>
+    <ul id="files"></ul>
+
+    <div class="mapwrap">
+      <p class="mapcap">Where each file lands in a 4 MB flash chip</p>
+      <div class="map" id="map" role="img" aria-label="Flash layout"></div>
+      <div class="ticks" aria-hidden="true"><span>0x0</span><span>1 MB</span><span>2 MB</span><span>3 MB</span><span>4 MB</span></div>
+    </div>
+    <div id="mapwarn" class="notice err hidden"></div>
+    <div class="row" style="margin-top:12px">
+      <button id="addrow" class="small ghost">Add another file</button>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span> Flash</h2>
+    <div class="opts">
+      <label>Speed
+        <select id="baud">
+          <option value="921600" selected>921600</option>
+          <option value="460800">460800</option>
+          <option value="230400">230400</option>
+          <option value="115200">115200</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="erase"> Erase all flash first</label>
+    </div>
+    <div class="row">
+      <button id="flash" class="primary" disabled>Flash</button>
+      <span id="fhint" class="status">Connect a board and add files first.</span>
+    </div>
+    <progress id="bar" max="100" value="0" aria-label="Flash progress"></progress>
+    <p id="pmsg" aria-live="polite"></p>
+  </section>
+
+  <section>
+    <h2>Log</h2>
+    <pre id="log" aria-live="off"></pre>
+  </section>
+
+  <footer>
+    Offsets match the PlatformIO Arduino layout for <code>esp32dev</code>: bootloader at <code>0x1000</code>, partitions at <code>0x8000</code>, boot_app0 at <code>0xe000</code>, firmware at <code>0x10000</code>.
+    After the first full flash you usually only need <code>firmware.bin</code>.
+  </footer>
+</main>
+
+<script type="module">
+import { ESPLoader, Transport } from "./vendor/esptool-js.js";
+
+const $ = (id) => document.getElementById(id);
+const SLOT_COLORS = ["--seg-a", "--seg-b", "--seg-c", "--seg-d"];
+const FLASH_BYTES = 4 * 1024 * 1024;
+const SECTOR = 0x1000;
+
+const PRESETS = [
+  { role: "Bootloader", offset: "0x1000",  match: /bootloader/i,  color: 0 },
+  { role: "Partitions", offset: "0x8000",  match: /partition/i,   color: 1 },
+  { role: "boot_app0",  offset: "0xe000",  match: /boot_app0/i,   color: 2 },
+  { role: "Firmware",   offset: "0x10000", match: /firmware|app/i, color: 3 },
+];
+
+let nextId = 1;
+let rows = PRESETS.map((p) => ({ id: nextId++, role: p.role, offset: p.offset, match: p.match, color: p.color, file: null, custom: false }));
+
+let transport = null, loader = null, busy = false;
+
+/* ---------- helpers ---------- */
+const logEl = $("log");
+function log(msg) {
+  logEl.textContent += msg + "\n";
+  logEl.scrollTop = logEl.scrollHeight;
+}
+const terminal = {
+  clean() { logEl.textContent = ""; },
+  writeLine(d) { log(d); },
+  write(d) { logEl.textContent += d; logEl.scrollTop = logEl.scrollHeight; },
+};
+function parseOffset(s) {
+  s = String(s).trim();
+  if (!s) return NaN;
+  const n = /^0x[0-9a-f]+$/i.test(s) ? parseInt(s, 16) : /^\d+$/.test(s) ? parseInt(s, 10) : NaN;
+  return Number.isFinite(n) ? n : NaN;
+}
+const hex = (n) => "0x" + n.toString(16);
+const kb = (n) => (n / 1024).toFixed(n < 10240 ? 1 : 0) + " KB";
+function varColor(row) {
+  return `var(${row.custom ? "--seg-x" : SLOT_COLORS[row.color]})`;
+}
+
+/* ---------- file rows ---------- */
+function addFiles(fileList) {
+  for (const file of fileList) {
+    if (!/\.bin$/i.test(file.name)) { log(`Skipped ${file.name}: not a .bin file.`); continue; }
+    let target = rows.find((r) => !r.custom && r.match && r.match.test(file.name) && !r.file);
+    if (!target && /merged|factory|full/i.test(file.name)) {
+      target = addCustom("Merged image", "0x0");
+    }
+    if (!target) target = rows.find((r) => !r.custom && r.role === "Firmware" && !r.file);
+    if (!target) target = addCustom("Extra file", "");
+    target.file = file;
+  }
+  render();
+}
+function addCustom(role, offset) {
+  const r = { id: nextId++, role, offset, file: null, custom: true };
+  rows.push(r);
+  return r;
+}
+
+function render() {
+  const ul = $("files");
+  ul.textContent = "";
+  for (const r of rows) {
+    const li = document.createElement("li");
+    li.className = "file";
+
+    const sw = document.createElement("span");
+    sw.className = "sw";
+    sw.style.background = varColor(r);
+
+    const role = document.createElement("span");
+    role.className = "role";
+    role.textContent = r.role;
+
+    const fname = document.createElement("span");
+    fname.className = "fname" + (r.file ? "" : " empty");
+    fname.textContent = r.file ? `${r.file.name} (${kb(r.file.size)})` : "No file chosen";
+
+    const off = document.createElement("div");
+    off.className = "off";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = r.offset;
+    input.placeholder = "0x…";
+    input.setAttribute("aria-label", `${r.role} flash offset`);
+    const n = parseOffset(r.offset);
+    if (r.file && (Number.isNaN(n) || n % SECTOR !== 0)) input.classList.add("bad");
+    input.addEventListener("input", () => { r.offset = input.value; refresh(); });
+    off.append(input);
+
+    const acts = document.createElement("div");
+    acts.className = "acts";
+    const pick = document.createElement("button");
+    pick.className = "small";
+    pick.textContent = r.file ? "Replace" : "Choose";
+    pick.addEventListener("click", () => {
+      const f = document.createElement("input");
+      f.type = "file"; f.accept = ".bin";
+      f.addEventListener("change", () => { if (f.files[0]) { r.file = f.files[0]; render(); } });
+      f.click();
+    });
+    acts.append(pick);
+    if (r.file || r.custom) {
+      const rm = document.createElement("button");
+      rm.className = "small ghost";
+      rm.textContent = r.custom ? "Remove" : "Clear";
+      rm.addEventListener("click", () => {
+        if (r.custom) rows = rows.filter((x) => x.id !== r.id); else r.file = null;
+        render();
+      });
+      acts.append(rm);
+    }
+
+    li.append(sw, role, fname, off, acts);
+    ul.append(li);
+  }
+  refresh();
+}
+
+/* Returns the images that will be flashed, plus any problems found. */
+function plan() {
+  const items = [];
+  const problems = [];
+  for (const r of rows) {
+    if (!r.file) continue;
+    const addr = parseOffset(r.offset);
+    if (Number.isNaN(addr)) { problems.push(`${r.role}: enter a flash offset like 0x10000.`); continue; }
+    if (addr % SECTOR !== 0) { problems.push(`${r.role}: offset ${hex(addr)} must be a multiple of 0x1000.`); continue; }
+    items.push({ row: r, addr, size: r.file.size, end: addr + r.file.size });
+  }
+  items.sort((a, b) => a.addr - b.addr);
+  const clashed = new Set();
+  for (let i = 1; i < items.length; i++) {
+    if (items[i].addr < items[i - 1].end) {
+      problems.push(`${items[i - 1].row.role} and ${items[i].row.role} overlap in flash.`);
+      clashed.add(items[i].row.id); clashed.add(items[i - 1].row.id);
+    }
+  }
+  return { items, problems, clashed };
+}
+
+function refresh() {
+  const { items, problems, clashed } = plan();
+
+  // flash map
+  const map = $("map");
+  map.textContent = "";
+  const span = Math.max(FLASH_BYTES, ...items.map((i) => i.end));
+  for (const it of items) {
+    const seg = document.createElement("div");
+    seg.className = "seg" + (clashed.has(it.row.id) ? " clash" : "");
+    seg.style.left = (it.addr / span) * 100 + "%";
+    seg.style.width = (it.size / span) * 100 + "%";
+    seg.style.background = varColor(it.row);
+    seg.title = `${it.row.role}: ${hex(it.addr)} to ${hex(it.end)} (${kb(it.size)})`;
+    map.append(seg);
+  }
+  map.setAttribute("aria-label", items.length
+    ? "Flash layout: " + items.map((i) => `${i.row.role} at ${hex(i.addr)}`).join(", ")
+    : "Flash layout: no files chosen");
+
+  const warn = $("mapwarn");
+  const tooBig = items.find((i) => i.end > FLASH_BYTES);
+  const msgs = [...problems];
+  if (tooBig) msgs.push(`${tooBig.row.role} extends past 4 MB. Check the offset if your board has a 4 MB chip.`);
+  warn.textContent = msgs.join(" ");
+  warn.classList.toggle("hidden", msgs.length === 0);
+
+  // flash button
+  const ready = loader && items.length > 0 && problems.length === 0 && !busy;
+  $("flash").disabled = !ready;
+  $("fhint").textContent = busy ? "Flashing. Keep this tab open and the board plugged in."
+    : !loader ? "Connect a board first."
+    : items.length === 0 ? "Add at least one file."
+    : problems.length ? "Fix the problems above."
+    : `Ready to write ${items.length} file${items.length > 1 ? "s" : ""} (${kb(items.reduce((s, i) => s + i.size, 0))}).`;
+  $("addrow").disabled = busy;
+}
+
+/* ---------- connect / disconnect ---------- */
+async function connect() {
+  if (busy) return;
+  $("chipwarn").classList.add("hidden");
+  let port;
+  try {
+    port = await navigator.serial.requestPort();
+  } catch { return; } // user cancelled
+  busy = true; refresh();
+  $("connect").disabled = true;
+  $("cstatus").textContent = "Connecting…";
+  try {
+    transport = new Transport(port, false);
+    loader = new ESPLoader({
+      transport,
+      baudrate: parseInt($("baud").value, 10),
+      romBaudrate: 115200,
+      terminal,
+    });
+    const chip = await loader.main();
+    $("cstatus").innerHTML = "";
+    const b = document.createElement("b");
+    b.textContent = chip;
+    $("cstatus").append("Connected: ", b);
+    $("connect").classList.add("hidden");
+    $("disconnect").classList.remove("hidden");
+    if (/ESP32-[SCHP]\d/.test(chip)) {
+      const w = $("chipwarn");
+      w.textContent = `This is a ${chip}, but the project targets the original ESP32 (esp32dev). Firmware built for esp32dev will not run on it.`;
+      w.classList.remove("hidden");
+    }
+  } catch (e) {
+    log("Connect failed: " + (e && e.message ? e.message : e));
+    $("cstatus").textContent = "Couldn't connect. Hold BOOT on the board and try again.";
+    await dropConnection();
+    $("connect").disabled = false;
+  } finally {
+    busy = false; refresh();
+  }
+}
+
+async function dropConnection() {
+  try { if (transport) await transport.disconnect(); } catch {}
+  transport = null; loader = null;
+}
+
+async function disconnect() {
+  await dropConnection();
+  $("disconnect").classList.add("hidden");
+  $("connect").classList.remove("hidden");
+  $("connect").disabled = false;
+  $("cstatus").textContent = "Not connected.";
+  $("chipwarn").classList.add("hidden");
+  refresh();
+}
+
+/* ---------- flash ---------- */
+function toBinaryString(buf) {
+  const bytes = new Uint8Array(buf);
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return s;
+}
+
+async function flash() {
+  const { items, problems } = plan();
+  if (!loader || problems.length || !items.length) return;
+  busy = true; refresh();
+  $("connect").disabled = true;
+  $("disconnect").disabled = true;
+  const bar = $("bar"), pmsg = $("pmsg");
+  bar.value = 0; pmsg.textContent = "Reading files…";
+  window.addEventListener("beforeunload", warnLeave);
+  let ok = false;
+  try {
+    const fileArray = [];
+    for (const it of items) {
+      fileArray.push({ data: toBinaryString(await it.row.file.arrayBuffer()), address: it.addr });
+    }
+    const totalRaw = items.reduce((s, i) => s + i.size, 0);
+    let done = 0, lastIdx = 0;
+    await loader.writeFlash({
+      fileArray,
+      flashSize: "keep",
+      flashMode: "keep",
+      flashFreq: "keep",
+      eraseAll: $("erase").checked,
+      compress: true,
+      reportProgress(idx, written, total) {
+        if (idx !== lastIdx) { done += items[lastIdx].size; lastIdx = idx; }
+        const frac = total ? written / total : 0;
+        const pct = Math.min(100, ((done + frac * items[idx].size) / totalRaw) * 100);
+        bar.value = pct;
+        pmsg.textContent = `Writing ${items[idx].row.role} at ${hex(items[idx].addr)}… ${Math.round(pct)}%`;
+      },
+    });
+    bar.value = 100;
+    pmsg.textContent = "Flashed. Resetting the board…";
+    try { await loader.after("hard_reset"); } catch (e) { log("Reset note: " + e.message); }
+    ok = true;
+  } catch (e) {
+    log("Flash failed: " + (e && e.message ? e.message : e));
+    pmsg.textContent = "Flash failed. See the log, then reconnect and try again.";
+  } finally {
+    window.removeEventListener("beforeunload", warnLeave);
+    await dropConnection();
+    busy = false;
+    $("disconnect").disabled = false;
+    await disconnect();
+    if (ok) pmsg.textContent = "Done. The board has restarted and is running the new firmware.";
+  }
+}
+function warnLeave(e) { e.preventDefault(); e.returnValue = ""; }
+
+/* ---------- wiring ---------- */
+if (!("serial" in navigator)) {
+  $("unsupported").classList.remove("hidden");
+  $("connect").disabled = true;
+}
+$("connect").addEventListener("click", connect);
+$("disconnect").addEventListener("click", disconnect);
+$("flash").addEventListener("click", flash);
+$("addrow").addEventListener("click", () => { addCustom("Extra file", ""); render(); });
+$("browse").addEventListener("click", () => $("multi").click());
+$("multi").addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
+const drop = $("drop");
+["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => addFiles(e.dataTransfer.files));
+
+render();
+</script>
+</body>
+</html>
