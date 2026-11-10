@@ -329,7 +329,7 @@ function render() {
 
     const role = document.createElement("span");
     role.className = "role";
-    role.textContent = r.required ? r.role : `${r.role} (optional)`;
+    role.textContent = r.role;
 
     const fname = document.createElement("span");
     fname.className = "fname" + (r.file ? "" : " empty");
