@@ -154,7 +154,7 @@ footer { color: var(--muted); font-size: .88rem; border-top: 1px solid var(--lin
 <body>
 <main>
   <h1>Firmware flasher</h1>
-  <p class="lede">Flash compiled <code>.bin</code> files to an ESP32 dev board (<code>esp32dev</code>) over USB. Files stay in your browser and are never uploaded.</p>
+  <p class="lede">Flash CYD firmware over USB. Choose a board profile for its firmware image, or use Custom for a full four-file flash. Files stay in your browser and are never uploaded.</p>
 
   <div id="unsupported" class="notice err hidden">
     This browser can't talk to serial devices. Use desktop Chrome, Edge, or Opera.
@@ -175,21 +175,32 @@ footer { color: var(--muted); font-size: .88rem; border-top: 1px solid var(--lin
 
   <section>
     <h2><span class="n">2</span> Choose firmware files</h2>
+    <div class="opts">
+      <label for="board">Board
+        <select id="board">
+          <option value="cyd28">CYD 2.8-inch</option>
+          <option value="cyd35">CYD 3.5-inch</option>
+          <option value="cyd4" selected>CYD 4-inch</option>
+          <option value="custom">Custom board (4 slots)</option>
+        </select>
+      </label>
+      <span class="status" id="boardhint">Changing boards clears loaded files. Choose the matching board firmware.</span>
+    </div>
     <div id="drop">
-      <p>Drop your <code>.bin</code> files here. They're matched to a slot by file name.</p>
+      <p id="drophelp">Drop the selected board's firmware and any optional system <code>.bin</code> files here.</p>
       <button id="browse">Browse files</button>
       <input id="multi" type="file" accept=".bin" multiple class="hidden">
     </div>
     <ul id="files"></ul>
 
     <div class="mapwrap">
-      <p class="mapcap">Where each file lands in a 4 MB flash chip</p>
+      <p class="mapcap">Where each file lands in the first 4 MB of flash</p>
       <div class="map" id="map" role="img" aria-label="Flash layout"></div>
       <div class="ticks" aria-hidden="true"><span>0x0</span><span>1 MB</span><span>2 MB</span><span>3 MB</span><span>4 MB</span></div>
     </div>
     <div id="mapwarn" class="notice err hidden"></div>
     <div class="row" style="margin-top:12px">
-      <button id="addrow" class="small ghost">Add another file</button>
+      <button id="addrow" class="small ghost hidden">Add another file</button>
     </div>
   </section>
 
@@ -220,8 +231,7 @@ footer { color: var(--muted); font-size: .88rem; border-top: 1px solid var(--lin
   </section>
 
   <footer>
-    Offsets match the PlatformIO Arduino layout for <code>esp32dev</code>: bootloader at <code>0x1000</code>, partitions at <code>0x8000</code>, boot_app0 at <code>0xe000</code>, firmware at <code>0x10000</code>.
-    After the first full flash you usually only need <code>firmware.bin</code>.
+    Firmware is required at <code>0x10000</code>. Bootloader (<code>0x1000</code>), partitions (<code>0x8000</code>), and boot_app0 (<code>0xe000</code>) are optional for every board profile. Only provide files built for your board; the flasher does not check image compatibility.
   </footer>
 </main>
 
@@ -233,7 +243,7 @@ const SLOT_COLORS = ["--seg-a", "--seg-b", "--seg-c", "--seg-d"];
 const FLASH_BYTES = 4 * 1024 * 1024;
 const SECTOR = 0x1000;
 
-const PRESETS = [
+const FULL_PRESETS = [
   { role: "Bootloader", offset: "0x1000",  match: /bootloader/i,  color: 0 },
   { role: "Partitions", offset: "0x8000",  match: /partition/i,   color: 1 },
   { role: "boot_app0",  offset: "0xe000",  match: /boot_app0/i,   color: 2 },
@@ -241,7 +251,8 @@ const PRESETS = [
 ];
 
 let nextId = 1;
-let rows = PRESETS.map((p) => ({ id: nextId++, role: p.role, offset: p.offset, match: p.match, color: p.color, file: null, custom: false }));
+let currentBoard = $("board").value;
+let rows = [];
 
 let transport = null, loader = null, busy = false;
 
@@ -268,15 +279,32 @@ function varColor(row) {
   return `var(${row.custom ? "--seg-x" : SLOT_COLORS[row.color]})`;
 }
 
+function resetBoardFiles() {
+  rows = FULL_PRESETS.map((p) => ({
+    id: nextId++,
+    role: p.role,
+    offset: p.offset,
+    match: p.match,
+    color: p.color,
+    file: null,
+    custom: false,
+    required: p.role === "Firmware",
+  }));
+  $("drophelp").innerHTML = 'Drop the selected board\'s firmware and any optional system <code>.bin</code> files here. Files are matched to slots by name.';
+  $("addrow").classList.toggle("hidden", currentBoard !== "custom");
+}
+
 /* ---------- file rows ---------- */
 function addFiles(fileList) {
   for (const file of fileList) {
     if (!/\.bin$/i.test(file.name)) { log(`Skipped ${file.name}: not a .bin file.`); continue; }
+    const isFullImage = /merged|factory|full/i.test(file.name);
     let target = rows.find((r) => !r.custom && r.match && r.match.test(file.name) && !r.file);
-    if (!target && /merged|factory|full/i.test(file.name)) {
+    if (!target && isFullImage) {
       target = addCustom("Merged image", "0x0");
+      target.merged = true;
     }
-    if (!target) target = rows.find((r) => !r.custom && r.role === "Firmware" && !r.file);
+    if (!target) target = rows.find((r) => r.required && !r.file);
     if (!target) target = addCustom("Extra file", "");
     target.file = file;
   }
@@ -301,7 +329,7 @@ function render() {
 
     const role = document.createElement("span");
     role.className = "role";
-    role.textContent = r.role;
+    role.textContent = r.required ? r.role : `${r.role} (optional)`;
 
     const fname = document.createElement("span");
     fname.className = "fname" + (r.file ? "" : " empty");
@@ -352,8 +380,12 @@ function render() {
 function plan() {
   const items = [];
   const problems = [];
+  const hasMergedImage = rows.some((r) => r.merged && r.file);
   for (const r of rows) {
-    if (!r.file) continue;
+    if (!r.file) {
+      if (r.required && !hasMergedImage) problems.push(`${r.role}: choose a .bin file.`);
+      continue;
+    }
     const addr = parseOffset(r.offset);
     if (Number.isNaN(addr)) { problems.push(`${r.role}: enter a flash offset like 0x10000.`); continue; }
     if (addr % SECTOR !== 0) { problems.push(`${r.role}: offset ${hex(addr)} must be a multiple of 0x1000.`); continue; }
@@ -393,7 +425,7 @@ function refresh() {
   const warn = $("mapwarn");
   const tooBig = items.find((i) => i.end > FLASH_BYTES);
   const msgs = [...problems];
-  if (tooBig) msgs.push(`${tooBig.row.role} extends past 4 MB. Check the offset if your board has a 4 MB chip.`);
+  if (tooBig) msgs.push(`${tooBig.row.role} extends past the first 4 MB of flash. Check the offset and board flash size.`);
   warn.textContent = msgs.join(" ");
   warn.classList.toggle("hidden", msgs.length === 0);
 
@@ -402,10 +434,11 @@ function refresh() {
   $("flash").disabled = !ready;
   $("fhint").textContent = busy ? "Flashing. Keep this tab open and the board plugged in."
     : !loader ? "Connect a board first."
-    : items.length === 0 ? "Add at least one file."
+    : items.length === 0 ? "Choose the required firmware file."
     : problems.length ? "Fix the problems above."
     : `Ready to write ${items.length} file${items.length > 1 ? "s" : ""} (${kb(items.reduce((s, i) => s + i.size, 0))}).`;
   $("addrow").disabled = busy;
+  $("board").disabled = busy;
 }
 
 /* ---------- connect / disconnect ---------- */
@@ -532,6 +565,11 @@ if (!("serial" in navigator)) {
 $("connect").addEventListener("click", connect);
 $("disconnect").addEventListener("click", disconnect);
 $("flash").addEventListener("click", flash);
+$("board").addEventListener("change", () => {
+  currentBoard = $("board").value;
+  resetBoardFiles();
+  render();
+});
 $("addrow").addEventListener("click", () => { addCustom("Extra file", ""); render(); });
 $("browse").addEventListener("click", () => $("multi").click());
 $("multi").addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
@@ -540,6 +578,7 @@ const drop = $("drop");
 ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
 drop.addEventListener("drop", (e) => addFiles(e.dataTransfer.files));
 
+resetBoardFiles();
 render();
 </script>
 </body>
